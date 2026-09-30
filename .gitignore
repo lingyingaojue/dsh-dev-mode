@@ -1,0 +1,13 @@
+# 依赖与运行产物
+node_modules/
+pnpm-lock.yaml
+
+# DSH 插件管理器的本地状态与日志
+.plugin-manager/
+
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

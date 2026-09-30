@@ -1,0 +1,24 @@
+{
+  "name": "dsh-dev-mode",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "开发者模式：DSH agent preset —— 新手几句话讲需求，AI 走完「写计划 → 子代理审计划 → 后台极简会话写代码并编译 → 子代理 QA → 极简会话 Debug → 复测 → 交付」全流程。",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "agent-preset",
+    "developer-mode"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lingyingaojue/dsh-dev-mode.git"
+  },
+  "homepage": "https://github.com/lingyingaojue/dsh-dev-mode#readme",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

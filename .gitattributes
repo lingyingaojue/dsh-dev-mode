@@ -1,0 +1,7 @@
+# 统一换行，避免 Windows/macOS 之间的整文件 diff 噪音
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.exe binary
