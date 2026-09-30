@@ -3,6 +3,8 @@
 > 一个 [DeepSeek Harness（DSH）](https://github.com/deepseek-ai) 插件：给 DSH 加一个「开发者模式」。
 > 新手用几句大白话讲想要什么，AI 自己走完 **写计划 → 审计划 → 后台写代码并编译 → 系统测试 → 修 bug → 复测 → 交付** 全流程。
 
+**你不需要懂编程，也不需要懂 AI —— 把想要的东西用大白话讲出来就行。** 说不清也没关系：它会先给你三个具体例子让你挑，像点菜一样。
+
 `dsh-plugin` ｜ `dsh` ｜ `deepseek-harness` ｜ `agent-preset`
 
 ---
@@ -17,10 +19,11 @@
 
 这个模式把一套固定的开发流水线**写进 DSH 的 Agent 人格**里，用户只负责讲需求、回答最多一次选择题，其余全部由 AI 带着子代理和后台会话完成。
 
-## 六步流水线
+## 开工体检 + 六步流水线
 
 | 步骤 | 谁在做 | 产物 |
 | --- | --- | --- |
+| **0 开工体检** | 主会话（本模式） | 先验：后台通道通不通、模型名可不可用、权限档位是多少、"新条款有没有生效"。不通就当场改成本会话自己做，不让用户白等 |
 | 1 问清楚 + 写计划 | 主会话（本模式） | `<工程目录>\.dsh-dev\plan.md`：用户原话逐字 / 我的理解 / 需求→验收标准映射 / 技术方案 / 文件清单 / 运行方式 |
 | 2 子代理审计划 | 子代理（只读） | `review-1.md`：`[必须改] / [建议改] / [通过]` + 按用户原话逐句核对 |
 | 3 后台开工 | 新建的**极简模式**会话，思考强度 **max（界面上的"完全"）** | 真正写代码、构建、自测三连（产物存在 / 构建或启动成功 / 端到端跑一次） |
@@ -29,6 +32,21 @@
 | 6 复测与交付 | 主会话 | 最多 3 轮复测；通过后 `present` 交付 + 一段白话总结 |
 
 出问题时 AI 会**如实报告**，不会假装测试通过；3 轮仍不过就交付当前最好版本，并用白话给出三条出路（再修一轮 / 先这样用 / 换思路重做）。
+
+## 流程分级：快线 / 全线
+
+- **快线**（四条全满足）：只改 1 个程序文件或新建 ≤2 个文件、验收标准 ≤3 条、不需要联网装东西、预计后台 1 轮做完 → 技术方案 ≤10 行、审计划只查两件事、修复上限 2 轮。
+- **全线**（默认）：走完整流程，修复上限 3 轮。
+- 两条线都不许省：QA 报告四块必须齐、每条缺陷必须有复现步骤、交付前必须给验收表。
+
+## 小白体验六条
+
+1. **不讲术语**：编译→打包、命令行→黑窗口、依赖→要用到的东西、部署→放到网上。
+2. **说不清就先给例子**：给 3 个具体例子让你挑；问题最多一轮、一次问完，每题都写"效果 + 代价"。
+3. **每次只说三件事**：现在第几步 / 你要不要做什么（通常是"不用"）/ 还要多久。
+4. **交付三件套**：双击就能打开的东西 + 中文说明书 + 桌面快捷方式，并告诉你数据存在哪、怎么备份。
+5. **你自己怎么验**：给你一份 3–5 步的自验清单，每步都是"点哪里 → 看到什么"。
+6. **出错只说三句话**：哪一步没成 / 我打算怎么修 / 你要不要做什么 —— 不甩英文报错。
 
 ## 用起来是什么样
 
@@ -51,6 +69,8 @@
 ```
 
 ## 安装
+
+> ⚠️ 桌面应用管着的那份配置（profile 名为 `desktop`）**不能用命令行装/卸**，会被直接拒绝；那种情况请用界面里的「设置 → 插件」安装。下面的命令行方式适用于你自己管的那份配置。
 
 **方式一：直接从 GitHub 装**（推荐）
 
@@ -100,7 +120,7 @@ node "<技能目录>\scripts\coder.mjs" read  --session <会话id> --tail 3
 
 它通过本机 `/api` 通道调用 DSH（认证密钥在运行时从你本机的 `$DSH_HOME/.credentials.yaml` 里读，**不写死任何密钥**，也不要把这套脚本用到不属于你的 DSH 实例上）。
 
-退出码约定：`0` 完成 ｜ `2` 还在跑（继续 `wait`，不是失败）｜ `3` 配置/认证/参数错 ｜ `4` 后台会话自报失败 ｜ `5` 长时间无进展（多半在等审批）。
+退出码约定：`0` 完成 ｜ `2` 还在跑（继续 `wait`，不是失败）｜ `3` 配置/认证/参数错 ｜ `4` 后台会话自报失败 ｜ `5` 长时间无进展（脚本会打印 `DEVHINT=`：按运行时权限档位判断是"在等批准"还是"真卡住"）。
 
 ## 你会被问到什么
 
@@ -109,14 +129,16 @@ node "<技能目录>\scripts\coder.mjs" read  --session <会话id> --tail 3
 ## 已知限制
 
 - **需要 DSH 0.2.0 及以上**（实测于 `0.2.0-rc.1` / `0.2.0-rc.2`）。
-- **打包成 exe、开真浏览器、写工作目录以外的位置**这类动作会被默认沙箱拦住，此时模式会**停下来问你一句**要不要放开权限，你同意后它才用更高权限重开后台会话。纯命令行、纯文件的程序用默认权限就够。
+- **权限由部署方决定**：默认权限可能是"要问"，也可能已经是完全放开。插件不预设任何一种——开工体检会报出实际档位，卡住时按实际档位给下一步；受限权限下后台会话的 shell 可能直接起不来（被沙箱挡住），此时脚本会**自动用完全放开权限重开一次**并打印 `DEVPERMFALLBACK=1`，不需要你手动处理。
 - **成本**：上面那个例子里的一次小需求约 47 分钟、几十万 token（含多个子代理与后台会话）。程序越大越久，但卡住时它会问你，不会闷头烧。
 - 模式 id 是 `dev`，比较通用；如果你的 profile 里已有同名 preset，会报 `Duplicate agent preset`，改 `cordis.patch.yml` 里的 id 即可。
 - 界面文案与提问都是中文优先；用英文提问时 AI 会用英文回答。
+- **实测环境**：目前的脚本与行为主要在 Windows 上实测过（发给后台的"黑窗口"指令会按系统自动生成）；其它系统尚未实测。
 
 ## 改这个插件
 
 - **只改技能或脚本** → 直接改 `skills/dev-pipeline/` 下的文件，技能是实时读取的。
+- **改完怎么确认真的生效**：读回真实生效内容（`agentPresets/read`，`selfcheck` 已自动比对 13 个必需标记）；不重启也能用 `dsh --profile <名> --dump-config` 验证加载器能否正确组合。**改动只对新开的会话生效。**
 - **改人格或组成** → 改 `cordis.patch.yml`，然后重装。注意：对已安装的本地链接插件直接重装会报 `ambiguous-install`，正确做法是
   **先移除、再安装**（`remove_bundle` → `install_bundle`，或 `dsh plugin remove` → `dsh plugin add`）。
 - `cordis.patch.yml` 里那句 `!!js … createRequire(baseUrl).resolve('dsh-dev-mode/package.json')` 负责定位本插件的技能目录；
@@ -130,6 +152,7 @@ A beginner describes what they want in a few plain sentences; the agent then run
 write a plan → have a subagent review it → spawn a minimal-mode background session (max reasoning effort) that writes and builds the code →
 have a QA subagent actually run and test it → send the findings back to the same session to fix → re-test → deliver —
 and asks the user at most one round of plain-language questions along the way.
+The user does **not** need to know programming or AI: they describe what they want in plain language, and if they cannot, the mode offers three concrete examples to pick from first.
 
 Install: `dsh plugin --profile <profile> add github:lingyingaojue/dsh-dev-mode` (then start a **new** session).
 Requires DSH 0.2.0+. Persona and prompts are Chinese-first.

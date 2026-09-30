@@ -1,8 +1,8 @@
 {
   "name": "dsh-dev-mode",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "type": "module",
-  "description": "开发者模式：DSH agent preset —— 新手几句话讲需求，AI 走完「写计划 → 子代理审计划 → 后台极简会话写代码并编译 → 子代理 QA → 极简会话 Debug → 复测 → 交付」全流程。",
+  "description": "开发者模式：DSH agent preset —— 新手几句话讲需求，AI 走完「开工体检 → 写计划 → 子代理审计划 → 后台极简会话写代码并编译 → 子代理 QA → 极简会话 Debug → 复测 → 交付」全流程；小事走快线、大事走全线。",
   "keywords": [
     "dsh",
     "dsh-plugin",
