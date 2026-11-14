@@ -1,0 +1,84 @@
+:root {
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --text: #1f2328;
+  --muted: #667085;
+  --line: #e4e7ec;
+  --accent: #2563eb;
+  --accent-soft: #eff4ff;
+  --danger: #b42318;
+  font-family: "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 32px 16px;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.card {
+  width: min(860px, 100%);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
+}
+
+h1 { margin: 0 0 6px; font-size: 24px; }
+.hint { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+
+.row { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
+.row.between { justify-content: space-between; align-items: center; }
+.grow { flex: 1 1 220px; }
+
+label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
+
+input {
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  background: #fff;
+}
+
+input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
+button, .file {
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button.secondary { background: #fff; color: var(--accent); border-color: var(--line); }
+button:hover, .file:hover { filter: brightness(0.97); }
+
+.file { background: #fff; color: var(--accent); border-color: var(--line); }
+.file input { display: none; }
+
+.actions { display: flex; gap: 8px; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+th { color: var(--muted); font-weight: 500; font-size: 13px; }
+.right { text-align: right; }
+
+.remove { background: transparent; color: var(--danger); border: none; padding: 0 6px; height: auto; }
+.empty { color: var(--muted); text-align: center; padding: 24px 0; }

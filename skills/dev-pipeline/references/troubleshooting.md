@@ -1,80 +1,72 @@
-# 疑难排查（dev-pipeline）
+# 原生子代理模式 · 排错
 
-SKILL.md 里那张表是快查版；这里是把机制讲透的版本，只有在快查版不够用时才读。
+本版本不再使用 `coder.mjs`、本地 `/api`、cookie、端口、退出码或 540 秒轮询。遇到问题按下面分岔。
 
-## 1. 认证与端口
+## 1. 先确认插件的两个预设生效
 
-- 通道：`POST http://127.0.0.1:3080/api/<namespace>/<method>`，请求体是 Connection RPC 信封
-  `{ type:"client-request", rpcId, method, payload:{ args } }`；**业务失败也返回 HTTP 200**，必须看 `result.ok`。
-- 认证：cookie 名 `dsh-auth-` + `base64url(sha256(authority))`，值 `v1.<payload>.<hmac>`，签名密钥在
-  `~\.dsh\.credentials.yaml` 的 `records.client-connection/browser-session.payload.secret`，
-  **base64url 文本解码出的 32 字节**才是 HMAC key（直接拿文本当 key 会 401）。`scripts\lib.mjs` 已经封装好。
-- 端口不要写死：`lib.mjs` 的解析顺序是「显式参数 → `$DSH_WEB_URL` → 默认地址」；默认地址连不上时，才按常见端口（3080 / 3000 / 4173 / 5173 / 8000 / 8080 / 8888）各试一次，**只在真的失败之后才探测**。cookie 的 authority 必须与最终采用的地址完全一致。
-- 请求不能带 `Origin`，也不能带 `sec-fetch-site: cross-site`（有个信任围栏）；Node 的 fetch 从本机发天然满足。
+- 界面：**设置 → 插件** 或首页模式列表，应看到「开发者模式」和「开发者模式·执行器」。
+- Agent 侧：`plugin_manager list_plugins` 里应有 `preset-dev`、`preset-dev-worker`，且 `fiberPhase=active`。
+- 只在**新会话**生效；已打开的会话保持原组成。
 
-## 2. 脚本行为与退出码
+## 2. 执行器启动失败
 
-| 退出码 | 含义 | 下一步 |
-| --- | --- | --- |
-| 0 | 这一轮做完了，`DEVRESULT` 看结果 | 进 QA |
-| 2 | 到了 `--deadline-sec` 还在跑 | 再 `wait --session <id>`，可无限续；**不是失败** |
-| 3 | 配置/认证/参数错（stderr 有原因） | 按原因修；连不上就降级为本会话自己实现 |
-| 4 | 后台会话自报 `DEVRESULT=FAIL` | 读 `DEVLOG` 末尾，补依赖/改计划后 `send` |
-| 5 | 超过 `--stall-sec` 没动静 | 脚本会打印 `DEVHINT=`，按**运行时读到的权限档位**分岔：不是完全放开 → 提示用户点开那个会话批准；已是完全放开 → 不是等批准，用 `read --tail 3` 定位或本会话接手 |
+现象：`subagent` 调用返回错误，或子代理没出现。
 
-为什么是 540 秒：前台命令最长 600 秒就会被转成后台作业（不是被杀），留 60 秒余量让脚本自己收尾并打印结果。
-后台会话本身跑在 DSH 服务端，与本地脚本进程无关，所以脚本中断不丢进度。
+- `agentPreset` 引用的 `dev-worker` 不存在/加载失败：重装插件，确认 `preset-dev-worker` 为 active。
+- `ACTIVATION_LIMIT_REACHED`：同时活着的子代理太多；等一个结束，或减少并发。
+- `DUPLICATE_AGENT_NAME` / `INVALID_AGENT_NAME`：换 `builder-2`/`tester-2` 这类名字。
+- 模型路由被拒：不要硬指定模型；省略 `provider`/`model`/`reasoning_effort`，继承父会话。
+- 以上都排除后仍失败：协调者降级自己实现，告诉用户一句，不要反复重试。
 
-## 3. RPC 参数（多一个字段都会被拒）
+## 3. 权限 / 沙箱拦截
 
-```
-session/create        { request: { cwd | workspaceId, sessionId?, agentPreset? } }   # cwd 与 workspaceId 互斥
-session/selectModel   { request: { sessionId, provider, model, reasoningEffort? } } # deepseek-official / deepseek-flash / off|low|high|max
-commands/execute      { agentId, line: "/permission <预设>", submittedAttachments: [] }
-session/prompt        { request: { requestId, sessionId, mode: "queue"|"steer", content:[{type:"text",text}], clientTimeZone } }
-session/list          { _request: {} }                                              # rows: running / updatedAt / projections.values.{agentPreset,permissions,modelSelection,sessionStats,turns,tokenUsage} / projections.asOfSeq
-session/page          { request: { address:{kind:"session",sessionId}, throughSeq } } # throughSeq 必须 ≤ projections.asOfSeq，超了会报错并告诉你当前游标
-workspace/archiveSession { request: { sessionId, stopActivity } }                    # stopActivity:true 会中断正在跑的轮次
-agentPresets/list     {} ;  agentPresets/read { agentPreset }
-session/modelCatalog  {}
-```
+- 现象：写文件、启动进程、创建快捷方式、访问数据目录时报 `EPERM`/`拒绝访问`/沙箱拦截。
+- 处理：一句白话说明；给两个选择：用户在界面把权限档位调宽，或把工程放到可写的工作目录。不要自动提权，不要用同一权限反复试。
+- 子代理继承父会话的权限根；工程目录必须在可写范围内。项目不要建在 `Program Files`。
+- 需要写 `%LOCALAPPDATA%` 做数据测试时，若被拦，改用 `APP_DATA_DIR` 指向工程内临时目录做验证，并在报告里标 BLOCKED 说明真实数据目录未验证。
 
-## 4. 几个会咬人的硬约束
+## 4. 子代理卡住 / 没动静
 
-1. **模式只在空白会话可改**：跑过第一轮后就锁死，所以后台会话必须在 `session/create` 时就带 `agentPreset: "minimal"`。
-2. **极简会话没有文件工具**：只有持久 pwsh。它靠 PowerShell 落盘，所以发给它的指令必须内联**绝对路径**。
-3. **极简会话的 persona 没有运行时上下文**（`includeRuntimeContext: false`）：它不知道自己的 cwd，别指望它自己去猜。
-4. **`customSkillDirs` 是追加语义**：本技能挂在 dev 模式自己的 preset 上，不影响其它模式的技能目录。
-5. 每次新建会话都会出现在用户侧栏里（**不会自动切过去**），这是设计如此。
+- 不要轮询。先 `list_agents` 看状态：`running` 是在跑，`inactive` 可能是已结束或没开始。
+- 常见卡点：执行器跑了需要键盘输入的交互命令（如 `rm` 的确认、`pause`、等待 stdin 的脚本），命令挂起，执行器整轮不动。处置：`interrupt_agent` 停掉，接手或重派；任务单里写明「所有命令必须非交互，用 `--yes` 等参数」。
+- 用 `send_message` 发一条具体纠偏：卡在哪、下一步做什么、报告要什么格式。
+- 仍无进展：`interrupt_agent` 停当前轮，拆小任务重开；或协调者自己接手。
+- 用户叫停：`interrupt_agent` 所有子代理，保存 `status.md`；不要归档会话来停止。
 
-## 5. 尚未实测、遇到时按这里兜底
+## 5. 构建 / 依赖失败
 
-| 项 | 兜底做法 |
-| --- | --- |
-| 极简会话的真实联网/装包能力 | 依赖统一由开发者模式会话先装好，并把确切构建命令写进 plan.md |
-| `coder.mjs wait` 在会话被删除后 | `session/list` 找不到会退 3 并说明；此时只能重新 `start` |
-| 权限命令与首条消息的竞态 | 默认不发 `/permission`；需要时由使用者显式 `--permission <档位>` |
-| 后台会话长时间无动静 | 退 5 + 脚本打印的 \`DEVHINT=\`：先看运行时权限档位是不是完全放开，再决定"让用户点一次批准"还是"本会话接手"；不要反复重试 |
+- 读完整错误日志，不猜；把确切命令和报错写进下一轮任务单。
+- 先判断是「缺运行时」「缺打包工具」还是「代码错」：缺运行时换方案或让用户装；缺工具先装项目内 `.venv`；代码错回传执行器修。
+- 只安装计划里列出的依赖；装之前一句话说明；不执行 `curl | iex`、不装来路不明的包。
+- 网络不可用：换无外网依赖的方案，或在报告里写 BLOCKED 及原因。
 
-## 6. 改完插件怎么验证真的生效
+## 6. QA 不通过
 
-- 判据不是「文件改了」，而是「读回的真实生效内容里有新条款」：读 `agentPresets/read { agentPreset: "dev" }`，比对 `coder.mjs` 里的 `REQUIRED_MARKERS`（13 条）；`selfcheck` 已自动做这件事。
-- 不重启也想确认加载器能否正确组合：`dsh --profile <名> --dump-config`，在输出里搜标记即可。
-- 生效范围：只对**新开会话**；现有会话保持原组成。
-- 别把部署差异写死：模型名、默认权限、端口都可能不一样，一律运行时读。
+- 把 `qa/qa-N.md` 原路径 `send_message` 给同一个 builder，要求逐条修；不要重新开一个执行器。
+- 修复后必须新开 tester 复测，并回归上一轮所有问题。
+- 轮数上限：L1 两轮、L2 三轮。到上限仍未全过：如实交付最好版本，两栏写「能用什么/哪里不行」，给三条出路，附最后一轮 QA 报告路径。
 
-## 7. 实测记录：minimal 会话在受限沙箱下能做什么（2026-09-30 冒烟）
+## 7. 数据 / 迁移问题
 
-一次真实冒烟（计划：写一个显示问候语和动态时间的单文件网页）的结果：
+- 任何数据结构改动：先备份数据、用副本测试迁移、成功后再切；失败回滚。
+- 数据损坏：优先从 `backups/` 恢复；不要自动删库。
+- 用户说「删掉」：只删你创建的程序文件；数据要单独确认。
 
-- 建会话 → `minimal` → `reasoningEffort: max` → 发指令 → 自测完成，**一轮**结束、28 次 `pwsh` 调用、`DEVRESULT=OK`。
-  用量参考：未缓存输入 11.3k、输出 44k、缓存读 708k token（缓存读便宜，但不是免费）。
-- **沙箱边界（重要）**：该会话继承 `workspace-write` + `ask`。在这种沙箱下，
-  **派生外部浏览器进程会失败**（Edge 无头模式因 Mojo 命名管道"拒绝访问"崩溃），`Start-Process`／WMI／计划任务也会被拒；
-  而 `pwsh` 直接跑命令、读写工程目录内的文件都正常。
-  那次冒烟里，后台会话自己改用进程内的 MSHTML 引擎完成了 DOM 与时钟验证——可接受的兜底，但不等于真浏览器验证。
-- 结论：测试需要真浏览器、命名管道或写工作目录以外的位置时，**不要用同一个受限权限反复重试**：
-  把确切命令写进 plan.md，用 `coder.mjs start --permission danger-full-access` 重开一次（先跟用户说明一句"要放开一点权限"）。
-  反过来，纯命令行、纯文件类的项目用默认权限通常就够，没必要提权。
-- **2026-09-30 复测（通用结论）**：部署默认权限随部署而变——可能是"要问"，也可能已经是完全放开、根本不产生批准提示；受限权限下极简会话的 shell 甚至可能直接起不来（`PTY shell exited during startup`），整轮空转。因此出口表按**运行时读到的档位**分岔，不预设任何默认值；建会话后先探活，被挡住就自动用完全放开权限重开一次。
+## 8. 上下文压缩 / 新会话
 
+- `plan.md`、`status.md`、`qa/`、`reports/` 是唯一事实来源；压缩后先读它们。
+- 不要凭记忆说「已经测过」；以证据文件为准。
+- 新会话继续：读 `status.md` 的「下一步」，从当前阶段接着做。
+
+## 9. DSH 升级后预设漂移
+
+- 本插件的 `preset-dev` 以 DSH 安装目录的 `@deepseek-ai/dsh-web-app/presets/standard.patch.yml` 为基线。
+- 升级 DSH 后：对照新 standard 的插件行，补上新增行、删掉已移除行；改完重装插件，新建会话验证。
+- 不要凭旧版本的字段写配置；以当前安装包的 README/源码为准。
+
+## 10. 重新安装
+
+1. 先移除：`plugin_manager` `remove_bundle` → `dsh-dev-mode`。
+2. 再安装：`plugin_manager` `install_bundle` → 仓库目录（本地目录会以 link 方式安装）。
+3. 确认 `application: applied`；若 `restart-required`，按提示重启应用。
+4. 只对新会话生效；用「开发者模式」新建会话验证。

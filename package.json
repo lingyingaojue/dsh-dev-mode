@@ -1,14 +1,16 @@
 {
   "name": "dsh-dev-mode",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "type": "module",
-  "description": "开发者模式：DSH agent preset —— 新手几句话讲需求，AI 走完「开工体检 → 写计划 → 子代理审计划 → 后台极简会话写代码并编译 → 子代理 QA → 极简会话 Debug → 复测 → 交付」全流程；小事走快线、大事走全线。",
+  "description": "开发者模式：DSH agent preset —— 用户用几句话讲需求，协调者按「接单分级 → 环境选型 → 规格计划 → 垂直切片 → 分批实现 → 独立验收 → 打包交付」七阶段推进；实现与测试交给原生子代理执行器，小事走快线、大事走全线，交付真跑过、数据安全、带中文说明的程序。",
   "keywords": [
     "dsh",
     "dsh-plugin",
     "deepseek-harness",
     "agent-preset",
-    "developer-mode"
+    "developer-mode",
+    "subagent",
+    "workflow"
   ],
   "license": "MIT",
   "repository": {
@@ -16,6 +18,24 @@
     "url": "git+https://github.com/lingyingaojue/dsh-dev-mode.git"
   },
   "homepage": "https://github.com/lingyingaojue/dsh-dev-mode#readme",
+  "engines": {
+    "dsh": ">=0.2.2-rc.3"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "skills",
+    "docs",
+    "locale",
+    "icon.svg",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

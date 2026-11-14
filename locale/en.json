@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Developer Mode",
+    "description": "Turn a plain-language request into a program that was actually run, with data safety, independent acceptance, and a Chinese manual.",
+    "detail": "docs/DETAIL.md"
+  }
+}
