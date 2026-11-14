@@ -1,214 +1,262 @@
-# dsh-dev-mode · 开发者模式
+<p align="center">
+  <img src="assets/banner.svg" alt="dsh-dev-mode — Developer Mode for DeepSeek Harness" width="100%">
+</p>
 
-[![release](https://img.shields.io/github/v/release/lingyingaojue/dsh-dev-mode)](https://github.com/lingyingaojue/dsh-dev-mode/releases)
-[![license](https://img.shields.io/github/license/lingyingaojue/dsh-dev-mode)](LICENSE)
-![DSH](https://img.shields.io/badge/DSH-0.2.2%2B-blue)
+<p align="center">
+  <strong>English</strong> ·
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="README.zh-TW.md">繁體中文</a>
+</p>
 
-> 一个 [DeepSeek Harness（DSH）](https://github.com/deepseek-ai) 插件：为 DSH 增加「开发者模式」。
-> 不懂编程的用户用几句话讲需求，代理按**接单分级 → 环境选型 → 规格计划 → 垂直切片 → 分批实现 → 独立验收 → 打包交付**七个阶段推进，
-> 交付**真跑过、数据安全、带中文说明**的程序；小事走快线，大事走全线。
+<p align="center">
+  <a href="https://github.com/lingyingaojue/dsh-dev-mode/releases"><img alt="Release" src="https://img.shields.io/github/v/release/lingyingaojue/dsh-dev-mode?display_name=tag&amp;sort=semver"></a>
+  <a href="https://github.com/lingyingaojue/dsh-dev-mode/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lingyingaojue/dsh-dev-mode/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/lingyingaojue/dsh-dev-mode"></a>
+  <img alt="DSH 0.2.2+" src="https://img.shields.io/badge/DSH-0.2.2%2B-blue">
+  <img alt="Windows 10/11" src="https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey">
+  <a href="CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen"></a>
+</p>
 
-`dsh-plugin` ｜ `dsh` ｜ `deepseek-harness` ｜ `agent-preset` ｜ `subagent`
+<h1 align="center">Developer Mode for DeepSeek Harness</h1>
 
----
+<p align="center">
+  <strong>Describe the program you want in plain language. Get back something that actually runs, was tested independently, and comes with a manual and an acceptance table.</strong>
+</p>
 
-## 30 秒上手
-
-1. 安装插件（见下方「安装」），**新建会话**，在模式列表选「开发者模式」。
-2. 直接说你要什么，例如：
-
-   > 帮我做个记账小工具，就放在当前目录。要求：记一笔／看明细／看结余／关掉再打开数据还在／双击就能开始用。我自己完全不懂编程，怎么做你定。
-
-3. 代理最多问你一轮（通常一个问题都不用答），然后自己选做法、写计划、派后台执行器写代码、独立测试、打包，最后交给你成品、中文说明和自检清单。
-
-设置里会看到「开发者模式·执行器」。它是自动调用的后台角色，**不用手动选**。
-
-## 你会拿到什么
-
-- 一个**能直接打开/运行**的成品（Windows 桌面程序、命令行工具或本地网页，按你的机器和需求选）。
-- 一份**中文使用说明**：怎么打开、怎么用、数据存在哪、怎么备份/恢复、怎么卸载。
-- 一张**验收表**：每条验收标准怎么验的、结果、证据路径；没验到的会明确写 `BLOCKED`，不糊弄。
-- 一份**自验清单**：3–5 步「点哪里 → 看到什么」，你自己点一遍就能确认没被忽悠。
-- 过程记录在工程目录的 `.dsh-dev/`，可删，不影响程序使用。
-
-## 它是怎么工作的
-
-模式由两个预设和一份技能组成：
-
-| 角色 | 预设 | 职责 |
-| --- | --- | --- |
-| 协调者 | `dev` | 问清楚、定范围与验收、选型、派活、把关、独立复核、打包、交付、跟用户说话 |
-| 执行器 | `dev-worker` | 按任务单写代码、构建、自测、写报告；不面向用户，不派子代理 |
-| 流水线手册 | `dev-pipeline` 技能 | 七阶段 SOP、任务单模板、工件契约、质量门、失败出口 |
-
-协调者通过 DSH **原生子代理**（`subagent`）把实现和测试交给执行器；通过 `subagent_fork` 在 L2 做计划评审。
-执行器启动后，协调者结束本轮、等完成通知，**不轮询、不空转**；用户叫停时用 `interrupt_agent` 停止。
-整个过程不需要本地 HTTP、cookie、端口或额外脚本——这是 v2 与 v1 最大的区别。
-
-## 七个阶段
-
-| 阶段 | 做什么 | 关卡 |
-| --- | --- | --- |
-| 0 接单分级 | 复述需求；最多一轮提问；定 L0/L1/L2 | G0 需求可懂 |
-| 1 环境选型 | 检查工作目录/运行时/打包工具；读现有工程；改旧程序先备份；选技术栈 | G1 环境可行 |
-| 2 规格计划 | MVP/非目标/验收标准/技术方案/文件清单/命令/风险回退；L2 独立评审 | G2 验收可判定 |
-| 3 垂直切片 | 最小端到端：能启动 + 一个核心动作 + 数据能存能读 | G3 切片跑通 |
-| 4 分批实现 | 小步实现、每批自测；协调者独立跑构建/自测并核对 diff | G4 功能齐全 |
-| 5 独立验收 | 新测试员只读、真跑、逐条给证据；失败回传同一执行器；回归上一轮 | G5 验收通过 |
-| 6 打包交付 | 最终产物、安装到最终位置、干净启动、快捷方式、中文说明、验收表 | G6 交付可用 |
-
-**三个档位**：
-
-- **L0 快修**：单文件、无新依赖、不改数据结构，≤3 条验收标准。协调者直接改，跑冒烟检查，不写完整计划、不派 QA。
-- **L1 标准**（默认）：新小型程序或中等改动。简版计划 + 执行器实现 + 独立测试员；修复上限 2 轮。
-- **L2 完整**：多文件、有数据、要打包、改现有程序、接外部依赖。完整计划 + 独立评审 + 垂直切片 + 干净环境安装测试；修复上限 3 轮。
-
-## 交付硬标准
-
-1. 从最终位置/最终产物能启动，不依赖开发命令。
-2. 所有验收标准有「怎么验 + 结果 + 证据」，PASS 必须真跑过。
-3. 有数据时证明「关掉再打开数据还在」，并给备份/恢复办法。
-4. L1/L2 必须有独立测试员，不许只读代码推断。
-5. 中文说明能让不懂编程的人照做；交付前协调者自己按说明走一遍。
-6. 未验证/做不到的写 `BLOCKED` 及原因，不假装通过。
-
-## 环境要求
-
-- **DSH 0.2.2 及以上**（实测 `0.2.2-rc.3`）。
-- 插件本身**不需要** Node/Python/.NET；它只用 DSH 原生工具。
-- 生成的程序按你的机器选型：有 Python 3.10+ 时默认 Python 桌面（tkinter + SQLite + PyInstaller）；没有 Python 但有 Node 时用 Node/命令行/网页方案；都没有时会先告诉你需要装什么，不会硬撑。
-- 当前主要在 **Windows 10/11** 实测；其它系统的 shell 行按平台生成，但未实测。
-
-## 安装
-
-**方式一：界面安装（推荐，桌面版）**
-
-DSH 的 **设置 → 插件 → 安装**，填入 `github:lingyingaojue/dsh-dev-mode` 或本机目录路径。
-
-**方式二：命令行（仅限自行管理的 profile）**
-
-```powershell
-dsh plugin --profile <你的 profile 名> add github:lingyingaojue/dsh-dev-mode
-```
-
-> 由桌面应用独占管理的 profile（名为 `desktop`）不能用命令行安装/卸载，会被直接拒绝；请使用界面安装。
-
-安装后需要**新建会话**才能看到「开发者模式」；已打开的会话保持原有组成，这是 DSH 的设计。
-
-**升级到 v2**：按原方式重新安装（本地目录安装建议先移除再安装，避免 `ambiguous-install`）。已有会话保持旧组成，新会话生效。
-
-**卸载**：
-
-```powershell
-dsh plugin --profile <你的 profile 名> remove dsh-dev-mode
-```
-
-## 使用建议
-
-- 说清「给谁用、做到什么算成功、数据重要不重要」就够了；技术选择交给代理。
-- 有旧程序要改：直接说「把 <程序> 改成 <要求>」；它会先备份再改，改完做回归。
-- 需求很大（登录、支付、多端同步）：它会先做最小可用的一块，等你确认再分阶段，不会闷头做半个系统。
-- 你在等待期间发的消息会作为追加要求处理；说「算了别做了」会停止后台执行器并保留进度。
-
-## 生成的目录
-
-```
-<工程目录>/
-├─ 程序/<名称>/                ← 新建项目；改旧程序则原地改
-│  ├─ 源码、构建脚本、README.md、AGENTS.md、dist/…
-│  └─ （Python 桌面）core.py / ui.py / app.py / build.ps1 / 启动.bat
-└─ .dsh-dev/                   ← 过程记录，可删，不影响程序使用
-   ├─ plan.md                  计划（用户原话、验收标准、技术方案、命令、风险）
-   ├─ status.md                阶段/迭代/子代理/下一步/证据
-   ├─ review-1.md              计划评审（仅 L2）
-   ├─ reports/build-N.md       每轮执行器报告
-   ├─ qa/qa-N.md               每轮独立测试报告
-   ├─ qa/evidence/             日志、截图、命令输出
-   ├─ delivery.md              交付说明 + 验收表
-   └─ backup-<时间戳>/          改已有程序前的备份
-```
-
-## 数据安全
-
-- 生成的程序默认把数据放在 `%LOCALAPPDATA%\<应用名>`，不写 Program Files；便携/绿色版可以放在程序目录的 `data/`，但打包时必须排除数据目录，并在手册里说明「升级覆盖会保留/覆盖什么」；测试用 `APP_DATA_DIR` 等环境变量覆盖。
-- 启动自动备份、保留最近 10 份；改数据结构前先备份、用副本测试迁移。
-- 卸载只删程序文件，默认保留数据；手册里写清恢复步骤。
-- 代理不会删除你的数据；说「删掉」时只删它自己创建的程序文件。
-
-## 已知限制
-
-- **权限由部署方决定**：受限权限下后台执行器可能无法启动命令或写工作目录以外的位置；模式会说明并给选项，不会自动提权。
-- **未签名 exe 会触发 SmartScreen**：手册里会写「更多信息 → 仍要运行」；这是签名证书问题，不是病毒。
-- **GUI 自动化有限**：测试员能跑自测、检查进程/窗口、截图；复杂的鼠标点击可能需要人工按自检清单确认，报告会标 `BLOCKED`。
-- **大系统不一次做完**：登录/支付/服务器类需求会先做最小可用版本，再分阶段。
-- **视觉细节**：插件详情页的渲染、非 Windows 平台未实测；交付报告会如实标注。
-- **模式 id 冲突**：`dev` / `dev-worker` 若与你的 profile 中已有预设同名，会报 `Duplicate agent preset`，可改 `cordis.patch.yml` 中的 id。
-
-## 排错
-
-先看：
-
-1. **设置 → 插件** 或模式列表里有没有「开发者模式」和「开发者模式·执行器」。
-2. 是否**新建**了会话（旧会话不会自动换组成）。
-3. `.dsh-dev/status.md`、`qa/`、`reports/` 里的进度与报错。
-
-详细的分岔与处置见 [`skills/dev-pipeline/references/troubleshooting.md`](skills/dev-pipeline/references/troubleshooting.md)。
-
-## 维护者：验证改动真的生效
-
-1. 重装插件后，`plugin_manager` 的 `list_plugins` 里 `preset-dev`、`preset-dev-worker` 都应为 `fiberPhase=active`；`list_bundles` 版本为 2.0.0。
-2. `agentPresets/list` 应同时出现 `dev`（新描述）与 `dev-worker`；`standard` 仍是默认。
-3. 新建「开发者模式」会话，说一句「用一句话说明你开工第一件事做什么」；应提到加载 `dev-pipeline` 技能、检查环境。
-4. 跑一次端到端：让它做一个带 `--selftest` 的小工具，检查 `.dsh-dev/` 下计划、执行报告、QA 报告、`delivery.md` 是否齐全，`QARESULT` 是否为 PASS。
-5. 安全检查：仓库里不应再有 `coder.mjs`、`lib.mjs`、`selfcheck`、`DEVPERM`、退出码 2/5 等旧运行时内容。
-
-### 维护者：同步 standard 预设
-
-`preset-dev` 以 DSH 安装目录的 `@deepseek-ai/dsh-web-app/presets/standard.patch.yml` 为基线（**逐行复制**，只改 persona、skill-filesystem、tool-subagent-control、tool-subagent 四处）。DSH 升级后：
-
-1. 读新版本的 `standard.patch.yml`。
-2. 对照 `cordis.patch.yml` 的 `preset-dev`：补新增行、删已移除行、改字段名。
-3. 重装插件，新建会话验证；不要凭旧版本字段写配置。
-
-## 项目结构
-
-```
-cordis.patch.yml                     预设声明（preset-dev + preset-dev-worker）
-package.json                         插件元数据（含 DSH bundle 声明、兼容范围、显示资源）
-CHANGELOG.md                         变更记录
-README.md                            本文件
-LICENSE                              MIT
-docs/DETAIL.md                       插件详情页说明
-locale/{zh,en}.json                  插件显示文案
-icon.svg                             插件图标
-skills/dev-pipeline/SKILL.md         七阶段手册（技能）
-skills/dev-pipeline/references/      详细 SOP、选型、工件、排错
-skills/dev-pipeline/templates/       工件模板 + Python 桌面/本地网页起步模板
-```
-
-## 开发与发版
-
-- 只改技能/模板：修改 `skills/dev-pipeline/` 后，新会话即读取新内容（技能按需加载）。
-- 改人格/预设：修改 `cordis.patch.yml`，**重装插件**后新会话生效；旧会话保持原组成。
-- 版本号三处一致：`package.json`、`CHANGELOG.md` 顶部、git tag。
-- 发布：`git tag -a vX.Y.Z -m "…"` → `git push origin main --tags` → `gh release create vX.Y.Z --notes-file <说明>`。
-
-> 本地链接安装重装时可能报 `ambiguous-install`；正确做法是**先移除、再安装**（`plugin_manager` 的 `remove_bundle` → `install_bundle`）。
-
-## 许可
-
-MIT © 2026 LingYingAoJue
+<p align="center">
+  <a href="#why-developer-mode">Why</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#what-you-get">What you get</a> ·
+  <a href="#documentation">Docs</a> ·
+  <a href="#contributing">Contributing</a>
+</p>
 
 ---
 
-## English
+## Why Developer Mode?
 
-**dsh-dev-mode** adds a "Developer Mode" agent preset to [DeepSeek Harness](https://github.com/deepseek-ai). Users describe what they want in plain language; the agent runs a seven-stage pipeline — **intake → recon & stack choice → spec & plan → vertical slice → incremental build → independent acceptance → packaging & delivery** — and delivers a program that was actually run, with data safety, a Chinese manual, and an acceptance table.
+Most "make me an app" experiences stop at a plausible-looking code block. Developer Mode is built around a different question: **can the result be installed, run, and trusted by someone who does not write code?**
 
-v2 uses DSH-native subagents: a coordinator preset (`dev`) delegates implementation and testing to a lean executor preset (`dev-worker`) via `subagent`, with completion notices and `interrupt_agent` instead of local HTTP, cookies, ports, or scripts. Three lanes (quick fix / standard / full) keep small tasks fast while preserving independent testing, packaging, and clean-state acceptance for real projects.
+- **Plain language in, working program out.** The user describes the outcome; the agent chooses the stack, writes the plan, builds, tests, packages, and explains.
+- **Native subagents, not fragile background scripts.** Implementation and testing run as DSH-native `subagent` activations with a lean executor preset. No local HTTP, cookies, ports, or side scripts.
+- **Evidence over claims.** Every acceptance criterion needs a verification method, a result, and an evidence path. Anything unverified is reported as `BLOCKED`, not silently passed.
+- **Built for delivery.** Data lives outside the program directory, writes are backed up, the artifact is launched from its final location, and the manual is tested by following it.
 
-Requires DSH 0.2.2+ (tested with 0.2.2-rc.3). The plugin itself needs no extra runtime; generated programs are chosen from what the machine actually has. Windows is the tested platform.
+> [!NOTE]
+> Developer Mode is a **DSH agent preset**, not a separate app. It requires DeepSeek Harness 0.2.2+ and runs inside a normal DSH session.
 
-Install via **Settings → Plugins → Install** with `github:lingyingaojue/dsh-dev-mode`, or `dsh plugin --profile <profile> add …` for non-desktop profiles. A new session is required.
+## At a glance
 
-MIT © 2026 LingYingAoJue
+| | |
+| --- | --- |
+| **What it is** | A developer-mode agent preset for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) |
+| **Requires** | DSH 0.2.2+ (tested with `0.2.2-rc.3`) |
+| **Tested on** | Windows 10/11 |
+| **Modes** | `dev` (coordinator) · `dev-worker` (executor) |
+| **Pipeline** | 7 stages · 3 lanes · 7 quality gates (G0–G6) |
+| **Install** | `github:lingyingaojue/dsh-dev-mode` |
+| **Status** | Active · Windows-tested · no runtime dependencies for the plugin itself |
+
+## How it works
+
+```mermaid
+flowchart TD
+    U[User] --> C[dev coordinator]
+    C --> S[dev-pipeline skill]
+    C --> B[builder / dev-worker]
+    C --> T[tester / dev-worker]
+    C --> R[reviewer / dev]
+    B --> P[project files + build reports]
+    T --> Q[QA report + evidence]
+    P --> C
+    Q --> C
+    C --> D[deliverable + manual + acceptance table]
+```
+
+| Role | Preset | Responsibility |
+| --- | --- | --- |
+| Coordinator | `dev` | Intake, scope, stack choice, delegation, review, packaging, delivery, user communication |
+| Executor | `dev-worker` | Implements one task at a time, builds, self-tests, writes a report; never talks to the user |
+| Pipeline skill | `dev-pipeline` | Seven-stage SOP, task templates, artifact contracts, quality gates, failure exits |
+| Reviewer | `dev` fork | Independent plan review for L2 work |
+| Tester | `dev-worker` | Independent acceptance; runs the program, collects evidence, writes QA report |
+
+### Seven stages
+
+| Stage | Outcome | Gate |
+| --- | --- | --- |
+| 0 · Intake & classify | Restated request, at most one question round, lane chosen | G0 request understood |
+| 1 · Recon & stack choice | Workspace/runtime check, existing-project read, backup, stack decision | G1 environment feasible |
+| 2 · Spec & plan | MVP, non-goals, acceptance criteria, commands, risks, packaging target | G2 criteria verifiable |
+| 3 · Vertical slice | Smallest end-to-end path: launch + one core action + persistence | G3 slice runs |
+| 4 · Incremental build | Small batches, self-tests, coordinator verifies builds and diffs | G4 features complete |
+| 5 · Independent acceptance | Fresh tester runs the artifact, evidence per criterion, regression | G5 acceptance passes |
+| 6 · Package & deliver | Final artifact, clean-state launch, shortcut, manual, acceptance table | G6 deliverable usable |
+
+### Three lanes
+
+| Lane | When | What changes |
+| --- | --- | --- |
+| **L0 · Quick fix** | One file, no new dependency, no data/packaging change, ≤3 criteria | Coordinator implements directly; smoke check; no full plan or independent QA |
+| **L1 · Standard** | New small program or moderate change | Brief plan + executor + independent tester; max 2 fix rounds |
+| **L2 · Full** | Multi-file, persistent data, packaging, existing program, external dependency | Full plan + independent review + vertical slice + clean-state install test; max 3 fix rounds |
+
+### Quality bar
+
+A result is deliverable only when:
+
+1. It launches from its final artifact/location, not from a development command.
+2. Every acceptance criterion has a method, a result, and an evidence path.
+3. If it stores data, "close and reopen, data is still there" was actually tested.
+4. L1/L2 work was tested by an independent tester, not inferred from code.
+5. A non-technical user can follow the manual; the coordinator walked through it first.
+6. Anything untested is reported as `BLOCKED` with a reason.
+
+## Quick start
+
+1. **Install** the plugin (see [Install](#install)), then **start a new session** and choose **Developer Mode**.
+2. **Describe the outcome**, not the technology. For example:
+
+   > Build me a small bookkeeping tool in this folder. I need to add an entry, see the list, see the balance, and keep the data after closing and reopening. I don't know programming — choose the approach yourself.
+
+3. Answer **at most one round** of questions (often none). The coordinator chooses the stack, writes the plan, delegates implementation, runs independent acceptance, and packages the result.
+4. You receive the artifact, a plain-language manual, an acceptance table, and a short self-check list.
+
+> [!NOTE]
+> The mode list also shows **Developer Mode · Executor** (`dev-worker`). It is the internal background role and is selected automatically — you do not need to choose it.
+
+> [!TIP]
+> If you already have a program, say "change `<program>` to `<requirement>`". The mode backs up the original first, then runs a regression check.
+
+## Install
+
+**Desktop app (recommended)**
+
+1. Open **Settings → Plugins → Install**.
+2. Enter `github:lingyingaojue/dsh-dev-mode`.
+3. Install, then **start a new session**.
+
+**CLI (profiles you manage yourself)**
+
+```powershell
+dsh plugin --profile <your-profile> add github:lingyingaojue/dsh-dev-mode
+```
+
+> [!IMPORTANT]
+> A profile managed exclusively by the desktop app (named `desktop`) cannot be installed or removed from the CLI. Use the in-app plugin settings instead.
+
+**Upgrade**
+
+Reinstall the plugin using the same method. For local-directory installs, remove it first and then add it again to avoid `ambiguous-install`. Existing sessions keep their original composition; only **new sessions** use the new version.
+
+**Uninstall**
+
+```powershell
+dsh plugin --profile <your-profile> remove dsh-dev-mode
+```
+
+## What you get
+
+- A runnable artifact: Windows desktop app, command-line tool, or local web page, chosen from what the machine can actually run.
+- A plain-language manual: how to open, how to use, where data lives, how to back up/restore, how to uninstall.
+- An acceptance table: every criterion with method, result, and evidence path.
+- A self-check list: 3–5 "click here → see this" steps a non-technical user can verify.
+- A `.dsh-dev/` process record: plan, status, build reports, QA reports, evidence, delivery notes, backups.
+
+<details>
+<summary><strong>Generated project layout</strong></summary>
+
+```text
+<workspace>/
+├─ 程序/<name>/                # new projects; existing programs are edited in place
+│  ├─ source, build script, README.md, AGENTS.md, dist/…
+│  └─ (Python desktop) core.py / ui.py / app.py / build.ps1 / 启动.bat
+└─ .dsh-dev/                   # process record; safe to delete after delivery
+   ├─ plan.md
+   ├─ status.md
+   ├─ review-1.md              # L2 only
+   ├─ reports/build-N.md
+   ├─ qa/qa-N.md
+   ├─ qa/evidence/
+   ├─ delivery.md
+   └─ backup-<timestamp>/
+```
+
+`程序` is the default project folder created by the mode ("programs"); existing projects are edited in place.
+
+</details>
+
+## Requirements & compatibility
+
+| Requirement | Notes |
+| --- | --- |
+| DeepSeek Harness | **0.2.2+**; tested with `0.2.2-rc.3` |
+| Operating system | **Windows 10/11 tested**; other platforms are untested |
+| Plugin runtime | None beyond DSH itself — no Node, Python, or .NET required by the plugin |
+| Generated program | Chosen from what the machine has: Python 3.10+, Node 18+, or a local web page |
+| Permissions | The deployment decides; the mode never silently escalates privileges |
+
+See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for the full matrix, preset-id conflicts, and the DSH `standard` preset sync procedure.
+
+### Upgrading from v1
+
+v2 removes the local HTTP background-session driver and its `coder.mjs`/`lib.mjs` commands. The `dev` preset id and the "Developer Mode" name are unchanged. Old sessions keep their composition; start a new session. Existing `.dsh-dev/plan.md` and QA records remain readable. See [CHANGELOG.md](CHANGELOG.md).
+
+## Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [docs/README.md](docs/README.md) | Documentation index and audience/language notes |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Presets, native-subagent data flow, stages, gates, artifacts, failure recovery |
+| [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) | DSH versions, platforms, preset ids, runtime selection, v1 migration |
+| [docs/FAQ.md](docs/FAQ.md) | Install, permissions, data, SmartScreen, uninstall, missing mode, costs |
+| [docs/MAINTAINING.md](docs/MAINTAINING.md) | Local install, activation checks, smoke tests, releases, CI, rollback |
+| [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) | Language policy, status, and how to add a translation |
+| [docs/DETAIL.en.md](docs/DETAIL.en.md) | Plugin-manager detail page (English) |
+| [skills/dev-pipeline/SKILL.md](skills/dev-pipeline/SKILL.md) | The seven-stage SOP used by the agent (Chinese) |
+
+## Status & roadmap
+
+**Status:** active · `v2.0.1` · Windows-tested · DSH 0.2.2+.
+
+- Validate the flow on macOS/Linux and document remaining platform gaps.
+- Add more project archetypes (beyond Python desktop, local web, and CLI).
+- Improve GUI acceptance evidence without fragile screen automation.
+- Grow community translations; the agent currently replies in Chinese or English.
+
+## Contributing
+
+Bug reports, docs fixes, translations, templates, and preset improvements are welcome.
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
+- For security issues, follow [SECURITY.md](SECURITY.md) — do not open a public issue.
+- Be kind: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+- Questions and setup help: [SUPPORT.md](SUPPORT.md).
+
+### Translations
+
+| Language | File | Status |
+| --- | --- | --- |
+| English | [README.md](README.md) | Canonical |
+| 简体中文 | [README.zh-CN.md](README.zh-CN.md) | Up to date |
+| 繁體中文 | [README.zh-TW.md](README.zh-TW.md) | Up to date |
+| Other languages | — | Contributions welcome — see [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) |
+
+> The plugin's display metadata and the agent's replies are primarily Chinese/English today. Other-language READMEs are introductions; the translation policy in [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) explains the limits.
+
+## License
+
+MIT © 2026 LingYingAoJue. See [LICENSE](LICENSE).
+
+---
+
+<p align="center">
+  <strong>English</strong> ·
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="README.zh-TW.md">繁體中文</a>
+</p>
+
+<p align="center">
+  <sub>Built for <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> · MIT</sub>
+</p>

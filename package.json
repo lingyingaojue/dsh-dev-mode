@@ -1,6 +1,6 @@
 {
   "name": "dsh-dev-mode",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "description": "开发者模式：DSH agent preset —— 用户用几句话讲需求，协调者按「接单分级 → 环境选型 → 规格计划 → 垂直切片 → 分批实现 → 独立验收 → 打包交付」七阶段推进；实现与测试交给原生子代理执行器，小事走快线、大事走全线，交付真跑过、数据安全、带中文说明的程序。",
   "keywords": [
@@ -10,7 +10,10 @@
     "agent-preset",
     "developer-mode",
     "subagent",
-    "workflow"
+    "workflow",
+    "ai-agent",
+    "developer-tools",
+    "windows"
   ],
   "license": "MIT",
   "repository": {
@@ -31,8 +34,11 @@
     "skills",
     "docs",
     "locale",
+    "assets",
     "icon.svg",
     "README.md",
+    "README.zh-CN.md",
+    "README.zh-TW.md",
     "CHANGELOG.md",
     "LICENSE"
   ],

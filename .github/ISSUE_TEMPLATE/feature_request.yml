@@ -1,0 +1,66 @@
+name: Feature request
+description: Suggest an improvement or a new capability for Developer Mode
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Developer Mode.
+
+        Before filing:
+        - Check the [README](https://github.com/lingyingaojue/dsh-dev-mode/blob/main/README.md) and [docs/](https://github.com/lingyingaojue/dsh-dev-mode/tree/main/docs) to see whether the feature already exists.
+        - Search the existing issues for duplicates.
+        - For security concerns, use [SECURITY.md](https://github.com/lingyingaojue/dsh-dev-mode/blob/main/SECURITY.md) instead of a public issue.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem are you trying to solve? Describe the current behavior and why it is not enough.
+      placeholder: "As a user who ..., I need ... because ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: What would you like to happen? Concrete examples (prompt, expected behavior, files involved) are very helpful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches or workarounds you have tried or considered, and why they fall short.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: Which part of the repository would this change?
+      options:
+        - Documentation
+        - Translation
+        - Templates / starter projects
+        - Preset or skill behavior (runtime)
+        - CI / repository tooling
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: willing-to-contribute
+    attributes:
+      label: Willing to contribute?
+      description: Would you be able to open a pull request for this? Not required — guidance is available.
+      options:
+        - "Yes"
+        - "No"
+        - Maybe / needs guidance
+    validations:
+      required: true
