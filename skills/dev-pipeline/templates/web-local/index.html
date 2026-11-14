@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>记账小工具</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="card">
+    <h1>记账小工具</h1>
+    <p class="hint">数据只存在这台电脑的浏览器里；重要数据请点「导出备份」。</p>
+
+    <form id="form" class="row">
+      <label>金额（元）
+        <input id="amount" inputmode="decimal" placeholder="12.50" autocomplete="off">
+      </label>
+      <label class="grow">备注
+        <input id="note" placeholder="午饭" autocomplete="off">
+      </label>
+      <button type="submit">保存</button>
+    </form>
+
+    <div class="row between">
+      <strong id="balance">结余：0.00 元</strong>
+      <span class="actions">
+        <button type="button" id="export" class="secondary">导出备份</button>
+        <label class="file">导入备份<input type="file" id="import" accept="application/json"></label>
+      </span>
+    </div>
+
+    <table>
+      <thead><tr><th>时间</th><th class="right">金额（元）</th><th>备注</th><th></th></tr></thead>
+      <tbody id="list"></tbody>
+    </table>
+    <p id="status" class="hint"></p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
