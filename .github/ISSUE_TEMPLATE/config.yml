@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation and FAQ
+    url: https://github.com/lingyingaojue/dsh-dev-mode/blob/main/docs/FAQ.md
+    about: Install, permissions, data, SmartScreen, uninstall, and troubleshooting answers.
+  - name: Security policy
+    url: https://github.com/lingyingaojue/dsh-dev-mode/security/advisories/new
+    about: Report a vulnerability privately. Do not open a public issue for security problems.
+  - name: DeepSeek Harness (upstream)
+    url: https://github.com/deepseek-ai/deepseek-harness
+    about: Bugs and questions about DSH itself belong in the upstream repository.

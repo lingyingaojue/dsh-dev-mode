@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Repository checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Repository consistency checks
+        run: node scripts/ci-check.mjs
+
+      - name: Compile Python starter template
+        run: |
+          tmp="$(mktemp -d)"
+          cp skills/dev-pipeline/templates/python-desktop/*.py "$tmp"/
+          python -m py_compile "$tmp"/*.py
+          rm -rf "$tmp"
+
+      - name: Syntax-check local web starter template
+        run: node --check skills/dev-pipeline/templates/web-local/app.js
+
+      - name: Validate package contents
+        run: npm pack --dry-run
