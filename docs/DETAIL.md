@@ -44,4 +44,4 @@
 - 权限由部署方决定；受限权限下后台执行器可能无法启动命令或写工作目录以外的位置。
 - 非 Windows 平台与插件详情页渲染未实测。
 
-安装、升级、排错与维护者验证见仓库 README。
+安装、升级、排错与维护者验证见 [README.zh-CN.md](../README.zh-CN.md) 与英文文档 [docs/README.md](README.md)、[docs/MAINTAINING.md](MAINTAINING.md)。

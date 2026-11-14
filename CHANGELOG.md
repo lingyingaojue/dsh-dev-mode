@@ -2,6 +2,20 @@
 
 本文件记录各版本的用户可见变化。安装与升级方式见 [README](README.md)。
 
+## 2.0.1
+
+- 发布日期：2026-11-14
+- 兼容性：**运行时不变**；DSH 0.2.2+；可选升级
+
+### 变更
+
+- 仓库专业化布局：英文主 `README.md` + `README.zh-CN.md` + `README.zh-TW.md`；banner、徽章、Mermaid 架构图、文档索引、语言切换。
+- 新增 `docs/` 文档中心：架构、兼容性、FAQ、维护、翻译政策、英文插件详情。
+- 新增社区文件：`CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、`SUPPORT.md`、Issue/PR 模板。
+- 新增 GitHub Actions CI 与 `scripts/ci-check.mjs`：文件/链接/版本/包内容/技能长度静态检查。
+- 插件英文详情页：`locale/en.json` 的 `meta.detail` 改为 `docs/DETAIL.en.md`。
+- 仓库 About 描述与 topics 更新（发布后）。
+
 ## 2.0.0
 
 - 发布日期：2026-11-14
@@ -16,7 +30,7 @@
 ### 新增
 
 - 执行器预设 `dev-worker`：文件、搜索、shell、后台作业、压缩；精简、无用户交互、低 token。
-- 七阶段流程：接单分级、环境选型、规格计划、垂直切片、分批实现、独立验收、打包交付；六道质量门 G0–G6。
+- 七阶段流程：接单分级、环境选型、规格计划、垂直切片、分批实现、独立验收、打包交付；七道质量门 G0–G6。
 - 三档：L0 快修（直接改）、L1 标准（执行器 + 独立测试）、L2 完整（评审 + 切片 + 干净环境安装）。
 - 垂直切片：先做「能启动 + 一个核心动作 + 数据能存能读」，再补功能。
 - 打包与干净环境验收：最终产物、安装到最终位置、快捷方式、从最终位置启动、关掉重开数据还在。
@@ -46,6 +60,20 @@
 
 ## English
 
+### 2.0.1
+
+- Release: 2026-11-14
+- Compatibility: **no runtime changes**; DSH 0.2.2+; optional upgrade
+
+#### Changed
+
+- Professional repository layout: English primary `README.md` + `README.zh-CN.md` + `README.zh-TW.md`; banner, badges, Mermaid diagrams, docs index, language switcher.
+- New `docs/` center: architecture, compatibility, FAQ, maintaining, translation policy, English plugin detail.
+- New community files: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, issue/PR templates.
+- New GitHub Actions CI and `scripts/ci-check.mjs`: static checks for files, links, versions, package contents, and skill length limits.
+- English plugin-manager detail: `locale/en.json` now points to `docs/DETAIL.en.md`.
+- Repository About description/topics updated after release.
+
 ### 2.0.0
 
 - Release: 2026-11-14
@@ -60,7 +88,7 @@
 #### Added
 
 - Lean `dev-worker` executor preset: file, search, shell, jobs, compaction; no user interaction.
-- Seven stages and six quality gates: intake, recon & stack choice, spec & plan, vertical slice, incremental build, independent acceptance, packaging & delivery.
+- Seven stages and seven quality gates: intake, recon & stack choice, spec & plan, vertical slice, incremental build, independent acceptance, packaging & delivery.
 - Three lanes: L0 quick fix (direct), L1 standard (executor + independent tester), L2 full (review + slice + clean-state install).
 - Vertical slice first: launch + one core action + data persistence, then features.
 - Packaging and clean-state acceptance: final artifact, final location, shortcut, launch from final location, data survives restart.
